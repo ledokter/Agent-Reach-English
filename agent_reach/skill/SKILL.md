@@ -9,7 +9,7 @@ description: >
   Does not: post, comment, like, message, or perform any write operation; does not log in on behalf of the user or ask for passwords.
   Prefer the Agent's built-in tools for public content; Reach fills the gaps.
 metadata:
-  homepage: https://github.com/Panniantong/Agent-Reach
+  homepage: https://github.com/ledokter/Agent-Reach-English
   version: "{{VERSION}}"
 ---
 

@@ -4,6 +4,20 @@ All notable changes to this project are recorded in this file.
 
 ---
 
+## [1.6.2] - 2026-11-09
+
+- YouTube subtitles now come in the video's own language by default (French for a French video), instead of a machine translation into Chinese. Only one subtitle track is downloaded, which avoids most "Too Many Requests" errors.
+- Bilibili: new read-only actions to follow uploaders (UP主): `users` (search uploaders), `user` (profile and followers), `user_videos` (latest videos with views) and `rank` (3- or 7-day leaderboard).
+- Bilibili no longer shows as "broken" in `doctor`: its test video had been removed from the site.
+- Install and `agent-reach update` now use this English fork instead of the Chinese upstream.
+
+Technical details:
+- `youtube subtitle --lang` defaults to `auto`: human subtitles in the video language, then its original auto-captions (`<lang>-orig`), then English; auto-caption machine translations are only used when asked for explicitly. The track list comes from one `--dump-json`, then exactly one track is fetched with `--load-info-json`. When nothing matches, the error hint lists the available tracks.
+- Bilibili live-test samples: `BV1xx411c7mD` (av2) and UID 2. bili-cli write commands (like, coin, triple, dynamic-post, unfollow) remain unexposed.
+- `update_notice.REPO` is `ledokter/Agent-Reach-English`; `docs/install.md` installs with `uv tool install git+https://github.com/ledokter/Agent-Reach-English`.
+
+---
+
 ## [1.6.1] - 2026-11-01
 
 - Several 1.6.0 cases where web search, Reddit, Xiaohongshu or Bilibili failed although the content was reachable, or reported success with empty content, are fixed.

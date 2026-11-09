@@ -76,6 +76,42 @@ def _run_ytdlp(args: list, timeout: float, cwd=None) -> str:
         raise
 
 
+def pick_subtitle_track(lang: str, video_lang, manual: dict, auto: dict):
+    """(track code, 'manual'|'auto') to download, or None.
+
+    `lang` is 'auto' or a comma-separated preference list. With 'auto' the order is:
+    human subtitles in the video's language, its original auto-captions, then
+    English, then any human subtitle. Auto-caption keys without '-orig' are
+    machine translations, so they are only used when asked for explicitly.
+    """
+    def find(code: str):
+        for pool, source in ((manual, "manual"), (auto, "auto")):
+            if code in pool:
+                return code, source
+        base = code.split("-")[0]
+        for key in manual:  # 'fr' also matches 'fr-FR', 'fr-CA'…
+            if key.split("-")[0] == base and not key.endswith("-orig"):
+                return key, "manual"
+        return None
+
+    wanted = [x.strip() for x in str(lang or "auto").split(",") if x.strip()]
+    if wanted and wanted != ["auto"]:
+        return next((hit for hit in map(find, wanted) if hit), None)
+    order = []
+    if video_lang:
+        base = str(video_lang).split("-")[0]
+        order += [video_lang, base, f"{video_lang}-orig", f"{base}-orig"]
+    order += ["en", "en-orig"]
+    for code in order:
+        hit = find(code)
+        if hit and (hit[1] == "manual" or code.endswith("-orig") or code == video_lang or code == "en-orig"):
+            return hit
+    if manual:
+        return sorted(manual)[0], "manual"
+    origs = sorted(k for k in auto if k.endswith("-orig"))
+    return (origs[0], "auto") if origs else None
+
+
 def _iso_date(yyyymmdd) -> str:
     s = str(yyyymmdd or "")
     return f"{s[:4]}-{s[4:6]}-{s[6:8]}" if len(s) == 8 and s.isdigit() else ""
@@ -139,7 +175,7 @@ class YouTubeChannel(Channel):
             "Full subtitle text of a video (manual or auto captions)",
             (
                 Param("target", "video link or id"),
-                Param("lang", "preferred languages, comma separated", required=False, default="zh-Hans,zh,en,en-orig"),
+                Param("lang", "preferred languages, comma separated; 'auto' = the video's own language, then English", required=False, default="auto"),
             ),
             (("yt-dlp", "_ytdlp_subtitle"),),
             live_test={"target": "https://www.youtube.com/watch?v=jNQXAC9IVRw"},
@@ -195,34 +231,44 @@ class YouTubeChannel(Channel):
 
     def _ytdlp_subtitle(self, *, target: str, lang: str, timeout: float) -> list:
         url = _video_url(target)
-        wanted = [x.strip() for x in lang.split(",") if x.strip()]
         with private_temporary_directory(prefix="agent-reach-subs-") as tmp:
-            out = _run_ytdlp(
+            # 1 page request for the track list, then exactly 1 subtitle download:
+            # asking yt-dlp for several languages at once fetched every one of them
+            # and quickly triggered YouTube's HTTP 429.
+            info_path = os.path.join(tmp, "info.json")
+            out = _run_ytdlp(["--dump-json", "--skip-download", url], timeout)
+            info = json.loads(out.splitlines()[-1])
+            with open(info_path, "w", encoding="utf-8") as fh:
+                json.dump(info, fh)
+            manual = info.get("subtitles") or {}
+            auto = info.get("automatic_captions") or {}
+            choice = pick_subtitle_track(lang, info.get("language"), manual, auto)
+            if choice is None:
+                tracks = sorted(set(manual) | {k for k in auto if k.endswith("-orig")})
+                raise ReachError(
+                    NOT_FOUND,
+                    f"no subtitles for '{lang}' on this video",
+                    hint=f"available tracks: {', '.join(tracks) or 'none'}; pass --lang with one of them",
+                )
+            code, source = choice
+            _run_ytdlp(
                 [
+                    "--load-info-json", info_path,
                     "--skip-download", "--no-simulate",
-                    "--write-subs", "--write-auto-subs",
-                    "--sub-langs", ",".join(wanted), "--sub-format", "vtt",
-                    "--print", "%(title)s",
+                    "--write-subs" if source == "manual" else "--write-auto-subs",
+                    "--sub-langs", re.escape(code), "--sub-format", "vtt",
                     "-o", "%(id)s.%(ext)s",
-                    url,
                 ],
                 timeout,
                 cwd=tmp,
             )
             files = [f for f in os.listdir(tmp) if f.endswith(".vtt")]
             if not files:
-                raise ReachError(NOT_FOUND, f"no subtitles in {', '.join(wanted)} for this video")
-
-            def rank(name: str) -> int:
-                code = name.rsplit(".", 2)[-2] if name.count(".") >= 2 else ""
-                return wanted.index(code) if code in wanted else len(wanted)
-
-            best = min(files, key=rank)
-            with open(os.path.join(tmp, best), encoding="utf-8", errors="replace") as fh:
+                raise ReachError(NOT_FOUND, f"subtitle track {code} could not be downloaded")
+            with open(os.path.join(tmp, files[0]), encoding="utf-8", errors="replace") as fh:
                 text = vtt_to_text(fh.read())
-        title = next((ln for ln in out.splitlines() if ln.strip()), None)
-        code = best.rsplit(".", 2)[-2] if best.count(".") >= 2 else None
-        return [make_item(title=title, url=url, text=text, raw={"lang": code})]
+        return [make_item(title=info.get("title"), url=url, text=text,
+                          raw={"lang": code, "source": source, "video_language": info.get("language")})]
 
     def _whisper_transcribe(self, *, target: str, timeout: float) -> list:
         from agent_reach.transcribe import NoProviderConfigured, TranscribeError

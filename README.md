@@ -5,6 +5,9 @@
   <strong>Let your AI agent reach the parts of the internet it can't reach on its own</strong>
 </p>
 
+> **English fork** of [Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) (MIT), maintained at [ledokter/Agent-Reach-English](https://github.com/ledokter/Agent-Reach-English).
+> Installing and `agent-reach update` both use this fork, so you stay on the English version. The star and trending badges below belong to the upstream project.
+
 <p align="center">
   Let your agent search and read X, Reddit, YouTube, XiaoHongShu…
 </p>
@@ -100,7 +103,7 @@ This table reflects the current release.
 | youtube | default | video info, search, subtitles, speech-to-text | nothing; speech-to-text needs a Groq or OpenAI key |
 | web | default | web search, page reading (fallback) | nothing |
 | v2ex | default | hot topics, nodes, topics with replies, users | nothing |
-| bilibili | default | search, video info, trending, subtitles | nothing; subtitles need a login (QR scan) |
+| bilibili | default | search, video info, trending, 3/7-day leaderboard, uploader (UP主) search, profiles and video lists, subtitles | nothing; subtitles need a login |
 | reddit | optional | search posts, read text/comments, browse a subreddit | login |
 | linkedin | optional | search jobs, read job details | public jobs need nothing; in-site search needs a login |
 | xiaohongshu | optional | search notes, read text, view comments | login |
@@ -122,7 +125,7 @@ This table reflects the current release.
 Send this to your agent:
 
 ```
-Install Agent Reach: https://raw.githubusercontent.com/Panniantong/Agent-Reach/main/docs/install.md
+Install Agent Reach: https://raw.githubusercontent.com/ledokter/Agent-Reach-English/main/docs/install.md
 ```
 
 Whether you're installing or upgrading, this one command is all you need.
@@ -223,7 +226,7 @@ For collaboration, or to join the community group, add me on WeChat, or join our
   <a href="https://discord.gg/FN6hpGrYKg"><img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&amp;logo=discord&amp;logoColor=white" alt="Join the Agent Reach Discord community"></a>
 </p>
 
-> For bug reports and feature requests, please use [GitHub Issues](https://github.com/Panniantong/Agent-Reach/issues) — easier to track.
+> For bug reports and feature requests, please use [GitHub Issues](https://github.com/ledokter/Agent-Reach-English/issues) — easier to track.
 
 ## No token or crypto affiliation
 

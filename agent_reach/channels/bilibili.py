@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Bilibili — multi-backend: bili-cli / OpenCLI / search API.
 
+Read-only: videos, subtitles, trending, leaderboard and uploader (UP主)
+profiles/videos. bili-cli's write commands (like, coin, post…) are never exposed.
+
 yt-dlp was REMOVED from this channel (live-verified 2026-06): bilibili's
 risk control 412-blocks yt-dlp's requests in every configuration we
 tried — latest version, direct, proxied, with warmed cookies — while
@@ -37,6 +40,13 @@ _BILI_LOGIN_HINT = (
 )
 
 
+_BILI_412_HINT = (
+    "Bilibili temporarily refuses this IP after many requests in a row. Wait several minutes "
+    "and retry once; this does not mean the uploader or video is missing. A Bilibili login "
+    "(`agent-reach login bilibili`, done by the user) usually makes these limits looser."
+)
+
+
 def _bvid(target: str, timeout: float) -> str:
     """BV id from a BV id, a video link, or a b23.tv short link."""
     t = str(target).strip()
@@ -68,8 +78,11 @@ def _bili_json(args: list, timeout: float) -> Any:
     if not payload.get("ok"):
         err = payload.get("error") or {}
         code = str(err.get("code", ""))
-        message = str(err.get("message", "bili-cli failed"))[:500]
+        message = str(err.get("message", "bili-cli failed")).split("<!DOCTYPE", 1)[0].split("<html", 1)[0].strip(" -")[:500]
         upstream_hint = str(err.get("hint") or "").strip() or None
+        if "412" in message:
+            # Bilibili's risk control answers 412 with an HTML page after bursts of requests.
+            raise ReachError(PLATFORM_BLOCKED, f"Bilibili risk control (HTTP 412): {message[:200]}", hint=_BILI_412_HINT)
         if any(word in code.lower() for word in ("risk", "captcha", "verification")):
             raise ReachError(PLATFORM_BLOCKED, message, hint=upstream_hint)
         if "rate" in code.lower() or "频繁" in message:
@@ -163,6 +176,56 @@ def _bili_api(path: str, timeout: float) -> dict:
 
 _UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
+#: av2 / BV1xx411c7mD is Bilibili's oldest public video, kept online by the site
+#: itself. The previous sample (BV1GJ411x7h7) was taken down and made `check`
+#: and `doctor` report the channel as broken although it worked.
+_LIVE_SAMPLE_BV = "BV1xx411c7mD"
+#: UID 2 is a Bilibili co-founder's account, public since the site's early days.
+_LIVE_SAMPLE_UID = "2"
+
+
+def _uploader(target: str) -> str:
+    """UID (digits), a space.bilibili.com link, or an uploader name (first search match)."""
+    t = str(target).strip()
+    m = re.search(r"space\.bilibili\.com/(\d+)", t)
+    if m:
+        return m.group(1)
+    if not t or "://" in t:
+        raise ReachError(BAD_INPUT, "target must be a UID, a space.bilibili.com link or an uploader name")
+    return t
+
+
+def _user_item(data: dict) -> dict:
+    u = data.get("user") or {}
+    rel = data.get("relation") or {}
+    uid = u.get("id")
+    lines = [
+        f"UID: {uid}",
+        f"Level: {u.get('level')}",
+        f"Followers: {rel.get('follower')}",
+        f"Following: {rel.get('following')}",
+        f"Bio: {u.get('sign') or ''}",
+    ]
+    return make_item(
+        title=u.get("name"),
+        url=f"https://space.bilibili.com/{uid}" if uid else None,
+        author=u.get("name"),
+        text="\n".join(lines),
+        raw={"id": uid, "name": u.get("name"), "level": u.get("level"), "sign": u.get("sign"),
+             "follower": rel.get("follower"), "following": rel.get("following")},
+    )
+
+
+def _uploader_search_item(u: dict) -> dict:
+    uid = u.get("id")
+    return make_item(
+        title=u.get("name"),
+        url=f"https://space.bilibili.com/{uid}" if uid else None,
+        author=u.get("name"),
+        text=f"Followers: {u.get('fans')} · Videos: {u.get('videos')}\n{u.get('sign') or ''}".strip(),
+        raw=u,
+    )
+
 
 class BilibiliChannel(Channel):
     name = "bilibili"
@@ -197,7 +260,7 @@ class BilibiliChannel(Channel):
             "Video title, uploader, description and stats",
             (Param("target", "BV id or video link"),),
             (("bili-cli", "_cli_read"), ("bilibili-api", "_api_read")),
-            live_test={"target": "BV1GJ411x7h7"},
+            live_test={"target": _LIVE_SAMPLE_BV},
         ),
         Action(
             "hot",
@@ -211,7 +274,44 @@ class BilibiliChannel(Channel):
             "Subtitle text of the first video part, when available (may need a Bilibili login)",
             (Param("target", "BV id or video link"),),
             (("bili-cli", "_cli_subtitle"),),
-            live_test={"target": "BV1GJ411x7h7"},
+            live_test={"target": _LIVE_SAMPLE_BV},
+        ),
+        Action(
+            "users",
+            "Search uploaders (UP主) by name: followers, video count, bio",
+            (
+                Param("query", "uploader name or keyword"),
+                Param("limit", "max results", required=False, type=int, default=5),
+            ),
+            (("bili-cli", "_cli_users"),),
+            live_test={"query": "bilibili", "limit": 2},
+        ),
+        Action(
+            "user",
+            "An uploader's profile: level, followers, following, bio",
+            (Param("target", "UID, space.bilibili.com link, or uploader name"),),
+            (("bili-cli", "_cli_user"),),
+            live_test={"target": _LIVE_SAMPLE_UID},
+        ),
+        Action(
+            "user_videos",
+            "An uploader's latest videos with view counts",
+            (
+                Param("target", "UID, space.bilibili.com link, or uploader name"),
+                Param("limit", "max videos", required=False, type=int, default=10),
+            ),
+            (("bili-cli", "_cli_user_videos"),),
+            live_test={"target": _LIVE_SAMPLE_UID, "limit": 2},
+        ),
+        Action(
+            "rank",
+            "Site-wide leaderboard over the last 3 or 7 days",
+            (
+                Param("days", "3 or 7", required=False, type=int, default=3),
+                Param("limit", "max items", required=False, type=int, default=10),
+            ),
+            (("bili-cli", "_cli_rank"),),
+            live_test={"days": 3, "limit": 2},
         ),
     )
 
@@ -243,6 +343,23 @@ class BilibiliChannel(Channel):
     def _api_hot(self, *, limit: int, timeout: float) -> list:
         data = _bili_api(f"/x/web-interface/popular?ps={limit}&pn=1", timeout)
         return [_api_video_item(v) for v in (data.get("list") or [])[:limit]]
+
+    def _cli_users(self, *, query: str, limit: int, timeout: float) -> list:
+        data = _bili_json(["search", query, "--type", "user", "-n", str(limit)], timeout)
+        return [_uploader_search_item(u) for u in (data if isinstance(data, list) else [])[:limit]]
+
+    def _cli_user(self, *, target: str, timeout: float) -> list:
+        return [_user_item(_bili_json(["user", _uploader(target)], timeout))]
+
+    def _cli_user_videos(self, *, target: str, limit: int, timeout: float) -> list:
+        data = _bili_json(["user-videos", _uploader(target), "-n", str(limit)], timeout)
+        return [_cli_video_item(v) for v in (data if isinstance(data, list) else [])[:limit]]
+
+    def _cli_rank(self, *, days: int, limit: int, timeout: float) -> list:
+        if days not in (3, 7):
+            raise ReachError(BAD_INPUT, "days must be 3 or 7")
+        data = _bili_json(["rank", "--day", str(days), "-n", str(limit)], timeout)
+        return [_cli_video_item(v) for v in (data.get("items") or [])[:limit]]
 
     def _cli_subtitle(self, *, target: str, timeout: float) -> list:
         _reuse_subtitle_login(timeout)
