@@ -15,7 +15,7 @@ Read when the user asks what can be fetched or how complete a result is. Declare
 |---|---|---|
 | GitHub | Public repos, README, Issue/PR | Repo search, reading repo/Issue/PR and returned comments; private permissions judged separately |
 | YouTube | Search, titles, descriptions; native tools may obtain some comments and subtitle body text | search/read/subtitle/transcribe; no unified comments action currently; a track list is not the subtitle body text, and transcription without subtitles depends on the relevant tool |
-| Bilibili | Search, descriptions; some public APIs can return comments with parent/child IDs | search/read/hot/subtitle; no unified comments action currently; subtitles vary by video and access path |
+| Bilibili | Search, descriptions; some public APIs can return comments with parent/child IDs | search/read/hot/subtitle/users/user/user_videos/rank; no unified comments action currently; subtitles vary by video and access path |
 | Reddit | Search, body text, some comments; some public JSON may contain parent/child IDs | Browser search/read/subreddit; login depends on the chosen path, full comment trees or all replies are not guaranteed; posting comments is not supported |
 | X/Twitter | Public single posts hit by search; some official public embeds can return full text | search/profile/tweets/thread; a readable single post does not mean the reply stream is readable, and a full comment tree is not guaranteed |
 | Xiaohongshu | Public listings or indexes may have note IDs, authors, titles; empty fields must not be guessed | search/read/comments; text descriptions, top-level comments and already-loaded replies; all comments are not guaranteed, and understanding images/video is not claimed |
