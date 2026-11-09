@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Xueqiu (雪球) — stock quotes, search, trending posts & hot stocks."""
+"""Xueqiu — stock quotes, search, trending posts & hot stocks."""
 
 import html
 import http.cookiejar
@@ -233,7 +233,7 @@ def _parse_hot_posts(data: Any, limit: int) -> list:
 
 class XueqiuChannel(Channel):
     name = "xueqiu"
-    description = "雪球股票行情与社区动态"
+    description = "Xueqiu stock quotes and community activity"
 
     level = "optional"
     login_url = "https://xueqiu.com/"
@@ -259,7 +259,7 @@ class XueqiuChannel(Channel):
             "search",
             "Find stocks by name or code",
             (
-                Param("query", "name or code, e.g. 茅台"),
+                Param("query", "name or code, e.g. Moutai"),
                 Param("limit", "max results", required=False, type=int, default=5),
             ),
             (("tencent", "_tencent_search"), ("xueqiu-api", "_xq_search")),

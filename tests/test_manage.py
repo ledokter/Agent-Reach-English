@@ -569,7 +569,7 @@ def test_setup_adds_default_channels_and_survives_a_failing_install(env, monkeyp
     report = result['installation_report']
     assert report['markdown'] == (state.root() / 'installation-report.md').read_text(encoding='utf-8')
     assert report['path'] == str(state.root() / 'installation-report.md')
-    assert '安装失败：UPSTREAM_BROKEN' in report['markdown']
+    assert 'install failed: UPSTREAM_BROKEN' in report['markdown']
 
 
 def test_setup_text_displays_compact_capability_table_and_keeps_json_mode(env, capsys, monkeypatch):
@@ -580,14 +580,14 @@ def test_setup_text_displays_compact_capability_table_and_keeps_json_mode(env, c
     assert cli.main(['setup', '--text']) == 0
     text = capsys.readouterr().out
     assert text.startswith('早上好呀，想搜点什么？☀️\n')
-    assert '| 平台 | 不登录可以查什么 | 需要登录后再试 |' in text
+    assert '| Platform | What works without login | Try after login |' in text
     assert text.count('|---|---|---|') == 1
-    assert '完整报告已保存：' in text
+    assert 'Full report saved: ' in text
     assert not text.startswith('{')
     assert cli.main(['setup']) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload['ok']
-    assert payload['result']['installation_report']['markdown'] == text.split('\n完整报告已保存：')[0]
+    assert payload['result']['installation_report']['markdown'] == text.split('\nFull report saved: ')[0]
 
 
 def test_setup_receipt_never_overwrites_a_linked_foreign_file(env, tmp_path):
@@ -604,7 +604,7 @@ def test_setup_receipt_never_overwrites_a_linked_foreign_file(env, tmp_path):
     assert foreign.read_text() == 'keep this'
     assert result['installation_report']['path'] is None
     assert result['installation_report']['write_error']
-    assert '| 平台 | 不登录可以查什么 | 需要登录后再试 |' in result['installation_report']['markdown']
+    assert '| Platform | What works without login | Try after login |' in result['installation_report']['markdown']
 
 
 # ── uninstall ──

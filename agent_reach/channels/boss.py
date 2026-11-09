@@ -24,7 +24,7 @@ from .base import Action, Channel, Param
 
 class BossChannel(Channel):
     name = "boss"
-    description = "Boss直聘 职位搜索与 JD"
+    description = "Boss Zhipin job search and JD"
     level = "optional"
     login_url = "https://www.zhipin.com/web/user/?ka=header-login"
     session = "boss-agent-cli"
@@ -39,7 +39,7 @@ class BossChannel(Channel):
             "Search jobs using a configured browser session",
             (
                 Param("query", "job keywords"),
-                Param("city", "city, e.g. 深圳", required=False),
+                Param("city", "city, e.g. Shenzhen", required=False),
                 Param("limit", "max results", required=False, type=int, default=10),
             ),
             (("opencli", "_opencli_search"), ("boss-agent-cli", "_cli_search")),

@@ -20,7 +20,7 @@ def test_json_output_preserves_unicode_with_legacy_encoding(monkeypatch, errors,
     payload = json.loads(result.stdout.decode("cp1252"))
     if args == ["channels"]:
         assert any("GitHub" in channel["description"] for channel in payload["channels"])
-        assert any("网页" in channel["description"] for channel in payload["channels"])
+        assert any("Web search and reading" in channel["description"] for channel in payload["channels"])
     else:
         assert "unknown-\U0001f600" in payload["error"]["message"]
 
@@ -32,4 +32,4 @@ def test_json_output_keeps_readable_utf8(monkeypatch):
         capture_output=True,
         check=True,
     )
-    assert "网页" in result.stdout.decode("utf-8")
+    assert "Web search and reading" in result.stdout.decode("utf-8")

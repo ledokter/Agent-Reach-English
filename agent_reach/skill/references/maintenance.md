@@ -1,13 +1,13 @@
-# 维护
+# Maintenance
 
-更新失败、浏览器起不来、渠道报错或用户要卸载时读这份。
+Read this when an update fails, the browser won't start, a channel errors out, or the user wants to uninstall.
 
-- 更新：`agent-reach update` 升级 Agent Reach、已加渠道的工具和 skill；`agent-reach update --check` 只查有没有新版本。只在用户同意后执行。
-- 状态：`agent-reach doctor --text` 读本地状态，不联网；`agent-reach check <渠道> --text` 联网实测一次（`--search` 只测搜索/职位）。安装成功不等于实测通过。
-- 浏览器：`agent-reach browser status` 看状态，`browser setup` 准备内核和扩展，`browser stop` 关闭；CloakBrowser 下载失败后修好网络可 `browser setup --retry-cloak`。
-- 分清失败环节：依赖下载、浏览器连接、登录、网页加载、平台限流各是各的；网络超时不要说成登录失效。
-- 上游工具出错：记下错误和版本，用户同意后 `agent-reach update` 一次；不改上游工具的安装文件，不循环重试。
-- `PLATFORM_BLOCKED`、`RATE_LIMITED`、`NEED_LOGIN`、`BUSY` 停止本次尝试，等用户处理后再继续，不反复开窗。
-- 密钥和代理：`agent-reach configure groq-key | openai-key | proxy | github-token`，值由用户本人提供。
-- 端口冲突（`Port <n> belongs to an unmanaged browser`）：别的程序占了专用浏览器端口（默认 9222）。不要关掉用户的那个程序；用户同意后 `agent-reach configure browser-port <空闲端口>`。
-- 卸载：先 `agent-reach uninstall --dry-run` 给用户看范围，确认后 `agent-reach uninstall`。只删 Reach 自己装的东西，用户的其他文件和浏览器保留。
+- Update: `agent-reach update` upgrades Agent Reach, the tools for added channels, and the skill; `agent-reach update --check` only checks whether a new version is available. Run only after the user agrees.
+- Status: `agent-reach doctor --text` reads local state without going online; `agent-reach check <channel> --text` runs one live online test (`--search` tests only search/jobs). A successful install does not mean a live test passed.
+- Browser: `agent-reach browser status` shows status, `browser setup` prepares the core and extensions, `browser stop` shuts it down; after a CloakBrowser download fails and the network is fixed, run `browser setup --retry-cloak`.
+- Distinguish the failure stage: dependency download, browser connection, login, page load, and platform rate-limiting are each separate; a network timeout must not be reported as a login failure.
+- Upstream tool errors: record the error and version, then run `agent-reach update` once with the user's consent; do not modify the upstream tool's install files, and do not retry in a loop.
+- `PLATFORM_BLOCKED`, `RATE_LIMITED`, `NEED_LOGIN`, `BUSY`: stop the current attempt and wait for the user to handle it before continuing; do not repeatedly open windows.
+- Keys and proxy: `agent-reach configure groq-key | openai-key | proxy | github-token`; values are provided by the user personally.
+- Port conflict (`Port <n> belongs to an unmanaged browser`): another program is occupying the dedicated browser port (default 9222). Do not close the user's program; after the user agrees, run `agent-reach configure browser-port <free-port>`.
+- Uninstall: first run `agent-reach uninstall --dry-run` to show the user the scope, then `agent-reach uninstall` after confirmation. Only items Reach installed itself are removed; the user's other files and browsers are kept.

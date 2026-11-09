@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Xiaoyuzhou Podcast (小宇宙播客) — transcribe podcasts via Groq Whisper API."""
+"""Xiaoyuzhou Podcast — transcribe podcasts via Groq Whisper API."""
 
 import os
 
@@ -15,7 +15,7 @@ _SCRIPT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "t
 
 class XiaoyuzhouChannel(Channel):
     name = "xiaoyuzhou"
-    description = "小宇宙播客转文字"
+    description = "Xiaoyuzhou podcast transcription"
 
     level = "optional"
     prereqs = ("ffmpeg",)
