@@ -1,13 +1,13 @@
 ---
 name: agent-reach
 description: >
-  只读读取各平台内容：搜索、读帖、看评论、取字幕、查行情和职位。
-  Use when 用户提到或贴出链接：小红书/xiaohongshu、B站/bilibili、Twitter/X、Reddit、
-  YouTube（字幕、转录）、GitHub、V2EX、雪球/股票行情、LinkedIn/Boss直聘 职位、
-  Instagram、Facebook、小宇宙播客；或说"帮我搜/看看/读一下这个链接"而自带网页搜索/读取不可用、失败或拿不到正文；
-  或要安装、加上/去掉某个平台、登录/退出、看状态、更新、卸载 Agent Reach。
-  不做：发帖、评论、点赞、私信等任何写操作；不替用户登录、不索要密码。
-  公开内容优先用 Agent 自带工具，Reach 补缺口。
+  Read-only access to content across platforms: search, read posts, view comments, fetch subtitles, check market quotes and job listings.
+  Use when the user mentions or pastes links: Xiaohongshu/RedNote, Bilibili, Twitter/X, Reddit,
+  YouTube (subtitles, transcripts), GitHub, V2EX, Xueqiu/stock quotes, LinkedIn/Boss Zhipin job listings,
+  Instagram, Facebook, Xiaoyuzhou podcasts; or says "help me search / take a look / read this link" while the built-in web search/read tool is unavailable, failing, or can't get the body text;
+  or wants to install, add/remove a platform, log in/out, check status, update, or uninstall Agent Reach.
+  Does not: post, comment, like, message, or perform any write operation; does not log in on behalf of the user or ask for passwords.
+  Prefer the Agent's built-in tools for public content; Reach fills the gaps.
 metadata:
   homepage: https://github.com/Panniantong/Agent-Reach
   version: "{{VERSION}}"
@@ -15,91 +15,91 @@ metadata:
 
 # Agent Reach
 
-一个命令读所有平台：`agent-reach`。只读，默认输出一行 JSON。
+One command to read every platform: `agent-reach`. Read-only, outputs one line of JSON by default.
 
-动手前先说一句"用 agent-reach skill（X 渠道）"。本 skill 被调用后全程有效，以下规则一直适用。
+Before acting, say "using the agent-reach skill (X channel)". Once this skill is invoked, the following rules apply throughout.
 
-## 选路
+## Routing
 
-- 公开内容先用你自带的搜索/读取工具（可加 `site:域名`）。正文、评论、字幕分别核对是否已拿到；够了就直接回答，不装渠道、不登录。
-- 自带工具不可用、结果缺了用户要的部分、或用户要的是渠道声明的站内动作时，再用 Reach。不确定有哪些动作和参数先跑 `agent-reach channels`。
-- 渠道已经加上（默认渠道或 `add` 过）时，搜索/阅读直接走该站工具；还没加的渠道，搜索/阅读先试免登录公开网页，结果里 `backend: public-web` 标明来源。`--backend public-web` 只查公开网页；`--backend <后端>` 指定站内工具。
-- 平台名或链接只用来认出来源，不自动触发安装或登录。
-- 摘要、页面壳、评论计数、字幕轨道列表不等于正文、评论或字幕本身，要分别说明。用户跳过登录时，已拿到的公开结果照样交付。
+- Try your built-in search/read tools first for public content (you can add `site:domain`). Verify separately whether you've got the body text, comments, and subtitles; if you have enough, answer directly — don't install channels or log in.
+- Only use Reach when the built-in tools are unavailable, missing the part the user wants, or the user wants an in-site action declared by the channel. If unsure which actions and parameters exist, run `agent-reach channels` first.
+- When a channel is already added (default channel or added via `add`), search/read goes directly through that site's tool; for channels not yet added, search/read first tries the public web without login, and results show `backend: public-web` to indicate the source. `--backend public-web` only queries the public web; `--backend <backend>` specifies an in-site tool.
+- The platform name or link is only used to identify the source; it does not automatically trigger installation or login.
+- Summaries, page shells, comment counts, and subtitle track listings are not the same as the body text, comments, or subtitles themselves — state each separately. When the user skips login, the public results already obtained are still delivered.
 
 ```bash
-agent-reach channels                      # 每个渠道的动作和参数
-agent-reach <渠道> <动作> [参数]          # 例：agent-reach xiaohongshu search "咖啡" --limit 5
-agent-reach read <链接>                   # 按链接自动选渠道
+agent-reach channels                      # actions and parameters for each channel
+agent-reach <channel> <action> [params]   # e.g.: agent-reach xiaohongshu search "coffee" --limit 5
+agent-reach read <link>                   # auto-select channel by link
 ```
 
-## 结果与错误
+## Results and Errors
 
-- `ok: true` → 内容在 `items`，每条有 `title / url / author / published_at / text`，原始数据在 `raw`。
-- `ok: false` → 看 `error.code`，照 `error.hint` 做：
+- `ok: true` → content is in `items`, each entry has `title / url / author / published_at / text`, and raw data is in `raw`.
+- `ok: false` → check `error.code` and follow `error.hint`:
 
-| error.code | 怎么办 |
+| error.code | What to do |
 |---|---|
-| `NEED_SETUP` | 缺依赖或密钥。按提示 `agent-reach add <渠道>`；要密钥时请用户本人提供，再 `agent-reach configure <key>` |
-| `NEED_LOGIN` | 保留已有结果，告诉用户需要登录；`agent-reach login <渠道>` 打开浏览器，由用户本人登录，你绝不代登、不要密码 |
-| `UPSTREAM_BROKEN` | 这个平台暂时有问题，`message` 是出错时的原话。用平台名告诉用户哪个平台暂时用不了、大概是什么原因，不说工具名；原话说明工具过时，才在用户同意后跑一次 `agent-reach update`；不循环重试 |
-| `TIMEOUT` | 看失败阶段和渠道状态（`agent-reach doctor --text`）；不反复重试、不反复开窗 |
-| `RATE_LIMITED` | 平台限流，Reach 已暂停该渠道；按 `retry_after_seconds` 等，不换后端 |
-| `PLATFORM_BLOCKED` | 平台要求验证（验证码/风控）。停下，请用户在官方页面处理；不换账号、不换后端 |
-| `BUSY` | 排队等了 2 分钟浏览器仍然满，或用户正开着登录窗口。过一会儿、或等用户说登好了再试；不关窗口、不切换配置 |
-| `NOT_FOUND` | 内容不存在，核对链接或 ID |
-| `BAD_INPUT` | 参数不对，跑 `agent-reach channels` 看用法 |
+| `NEED_SETUP` | Missing dependency or key. Follow the prompt to run `agent-reach add <channel>`; if a key is required, have the user provide it themselves, then run `agent-reach configure <key>` |
+| `NEED_LOGIN` | Keep the results already obtained and tell the user login is required; `agent-reach login <channel>` opens a browser for the user to log in themselves — you never log in for them and never ask for passwords |
+| `UPSTREAM_BROKEN` | This platform has a temporary problem; `message` is the original error text. Tell the user in plain language which platform is temporarily unavailable and roughly why, without naming the tool; only run `agent-reach update` once after user consent if the error text indicates the tool is outdated; do not retry in a loop |
+| `TIMEOUT` | Check the failure stage and channel status (`agent-reach doctor --text`); do not retry repeatedly or reopen windows |
+| `RATE_LIMITED` | The platform is rate-limiting; Reach has already paused this channel. Wait per `retry_after_seconds`; do not switch backends |
+| `PLATFORM_BLOCKED` | The platform requires verification (captcha / risk control). Stop and ask the user to handle it on the official page; do not switch accounts or backends |
+| `BUSY` | The browser was still full after 2 minutes in the queue, or the user has a login window open. Try again after a while, or wait for the user to say login is done; do not close windows or switch configs |
+| `NOT_FOUND` | Content does not exist; check the link or ID |
+| `BAD_INPUT` | Wrong parameters; run `agent-reach channels` to see usage |
 
-遇到 `PLATFORM_BLOCKED`、`RATE_LIMITED`、`NEED_LOGIN`、`BUSY` 就停止本次尝试，不换账号、后端或浏览器反复请求。网络失败或某台机器的失败不能说成"平台必须登录"。
+On `PLATFORM_BLOCKED`, `RATE_LIMITED`, `NEED_LOGIN`, or `BUSY`, stop the current attempt — do not switch accounts, backends, or browsers to keep retrying. A network failure or a failure on one machine must not be reported as "the platform requires login".
 
-## 登录与专用浏览器
+## Login and the Dedicated Browser
 
-所有浏览器渠道共用一个专用浏览器（优先 CloakBrowser，装不上时用本机 Chrome），默认无头不弹窗，闲置 10 分钟自动关闭，下次调用自动重开。可以并行调用（包括子代理同时查）：同一平台最多同时 2 条，所有平台合计 4 条，多出来的自动排队；同一平台的两次搜索之间至少隔 10 秒。
+All browser channels share one dedicated browser (CloakBrowser preferred, falling back to the local Chrome if it can't be installed). It runs headless by default with no popup window, auto-closes after 10 minutes idle, and reopens automatically on the next call. Parallel calls are allowed (including sub-agents querying at the same time): at most 2 concurrent calls per platform, 4 total across all platforms — extras queue automatically; two searches on the same platform must be at least 10 seconds apart.
 
-第一次用某个网站时，如果用户的 Chrome 已连接 OpenCLI 扩展，程序会把该站登录自动复制一次到专用浏览器，之后一直复用；只复制该站，不动原浏览器。登录失效或没有可复制的来源时，才请用户本人 `agent-reach login <渠道>`。刷新、选来源、退出等细节见 [会话与专用浏览器](references/sessions.md)：用户要登录、退出、换账号，或遇到 `NEED_LOGIN` 时读它。
+The first time a website is used, if the user's Chrome has the OpenCLI extension connected, the program copies that site's login once into the dedicated browser, then reuses it thereafter; only that site is copied, the original browser is untouched. Only when the login has expired or there is no source to copy from does the program ask the user to run `agent-reach login <channel>` themselves. For details on refresh, source selection, and logout, see [Sessions and the dedicated browser](references/sessions.md): read it when the user wants to log in, log out, switch accounts, or hits `NEED_LOGIN`.
 
-## 平台注意
+## Platform Notes
 
-- 小红书 read 只返回文字描述，不要声称看懂了图片或视频。
-- Boss 直聘搜索结果 `salary_encoded=true` 时绝不猜薪资数字；read 职位链接拿详情里的可读薪资。
-- 各平台公开能做什么、Reach 补什么，见 [能力边界](references/capabilities.md)：用户问"能查什么/查得全吗"或要判断结果完整度时读它。
+- Xiaohongshu read returns only text descriptions; do not claim to have understood images or videos.
+- When Boss Zhipin search results have `salary_encoded=true`, never guess salary figures; read the job link to get the readable salary from the details.
+- For what each platform can do publicly and what Reach adds, see [Capability boundaries](references/capabilities.md): read it when the user asks "what can you query / is it complete" or to judge result completeness.
 
-## 渠道
+## Channels
 
 {{CHANNEL_TABLE}}
 
-`default` 是默认安装的渠道，也可以去掉，去掉后更新不会加回来。`login` 列是认证入口，不是查公开内容的前提。
+`default` channels are installed by default and can also be removed; once removed, updates will not add them back. The `login` column is the auth entry point, not a prerequisite for querying public content.
 
-## 安装完成时
+## When Installation Completes
 
-`agent-reach setup` 后，把 `result.installation_report.markdown` 原样展示给用户，不增删、不重排、不自己补问候或表格；报告由程序生成。
+After `agent-reach setup`, show `result.installation_report.markdown` to the user verbatim — no additions, deletions, reordering, or self-added greetings or tables; the report is generated by the program.
 
-## 用户要管理 Agent Reach 时
+## When the User Wants to Manage Agent Reach
 
-| 用户说 | 你运行 |
+| User says | You run |
 |---|---|
-| 加上某个平台 | `agent-reach add <渠道>`，依赖自动装好；只告诉用户他必须做的事（登录或提供密钥） |
-| 去掉某个平台 | `agent-reach remove <渠道>` |
-| 登录 / 登录过期 | `agent-reach login <渠道>`，由用户本人在打开的窗口里登录 |
-| 退出登录 | `agent-reach logout <渠道>` |
-| 看看状态 / 哪些能用 | `agent-reach doctor --text`；要实测跑 `agent-reach check <渠道> --text` |
-| 升级 / 更新 | `agent-reach update` |
-| 卸载 | 先 `agent-reach uninstall --dry-run` 给用户看，确认后 `agent-reach uninstall` |
-| 让另一个 AI 也能用 | `agent-reach skill link <那个 AI 的 skill 目录>`；`agent-reach skill` 查看现在放在哪 |
-| 某个 AI 不要用户级的 skill（比如只按项目注册） | `agent-reach skill unlink <那个 AI 的 skill 目录>`；之后 setup 和 update 不再放回去 |
+| Add a platform | `agent-reach add <channel>`; dependencies install automatically; only tell the user what they must do themselves (log in or provide a key) |
+| Remove a platform | `agent-reach remove <channel>` |
+| Log in / login expired | `agent-reach login <channel>`; the user logs in themselves in the opened window |
+| Log out | `agent-reach logout <channel>` |
+| Check status / what's available | `agent-reach doctor --text`; for a live test run `agent-reach check <channel> --text` |
+| Upgrade / update | `agent-reach update` |
+| Uninstall | First run `agent-reach uninstall --dry-run` to show the user, then after confirmation run `agent-reach uninstall` |
+| Let another AI use it too | `agent-reach skill link <that AI's skill directory>`; run `agent-reach skill` to see where it's currently placed |
+| An AI should not have a user-level skill (e.g. registered per-project only) | `agent-reach skill unlink <that AI's skill directory>`; afterwards setup and update will not place it back |
 
-故障排查、浏览器维护和卸载细节见 [维护说明](references/maintenance.md)：更新失败、浏览器起不来或要卸载时读它。
+For troubleshooting, browser maintenance, and uninstall details, see [Maintenance guide](references/maintenance.md): read it when an update fails, the browser won't start, or you need to uninstall.
 
-## 有新版本时
+## When a New Version Is Available
 
-结果里出现 `meta.update` 就说明有新版本。每次对话只提一次，用用户的语言、大白话：
+A `meta.update` in the results means a new version is available. Mention it only once per conversation, in the user's language and plain words:
 
-1. 告诉用户有新版本（`meta.update.latest`）。
-2. 从 `meta.update.notes` 挑 1 到 3 个要点说清改了什么。
-3. 问要不要更新；用户同意后才跑 `agent-reach update`。
+1. Tell the user a new version is available (`meta.update.latest`).
+2. Pick 1 to 3 highlights from `meta.update.notes` and explain what changed.
+3. Ask whether to update; only run `agent-reach update` after the user agrees.
 
-## 红线
+## Red Lines
 
-- 只读。发帖、评论、点赞、私信一律不做。
-- 不替用户登录，不索要或输出密码、Cookie 等凭据。
-- 普通查询不改依赖、不自动更新。
+- Read-only. Posting, commenting, liking, and messaging are never done.
+- Never log in on behalf of the user; never ask for or output passwords, cookies, or other credentials.
+- Ordinary queries do not change dependencies and do not auto-update.

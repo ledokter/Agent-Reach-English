@@ -169,7 +169,7 @@ def _topic_item(topic: dict, text: Any = None, raw: Any = None) -> dict:
 
 class V2EXChannel(Channel):
     name = "v2ex"
-    description = "V2EX 节点、主题与回复"
+    description = "V2EX nodes, topics and replies"
 
     level = "default"
     actions = (

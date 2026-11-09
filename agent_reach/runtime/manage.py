@@ -755,7 +755,7 @@ def setup() -> dict:
         report["path"] = str(atomic_write_private_text(state.root() / "installation-report.md", markdown))
     except (OSError, PrivatePathError):
         # The receipt remains in stdout even if its local copy cannot be saved.
-        report["write_error"] = "安装报告未能保存；完整表格仍在 installation_report.markdown。"
+        report["write_error"] = "The install report could not be saved; the full table is still in installation_report.markdown."
     result["installation_report"] = report
     if migration:
         state.mutate(lambda saved: saved.__setitem__("migration_reported", True))

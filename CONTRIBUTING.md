@@ -71,7 +71,7 @@ Paste the `check --text` output into the PR. Also add unit tests under `tests/` 
 
 ## Release notes
 
-Every version section in `CHANGELOG.md` starts with a short plain summary for users, in Chinese and in English: what changed for them and anything they must do, in 1 to 4 short points, with no jargon (no file names, commands or internal terms). This text becomes the GitHub release body, which the AI reads from `meta.update.notes` and shows the user when it offers an update. Technical entries follow below the summary.
+Every version section in `CHANGELOG.md` starts with a short plain summary for users, in English: what changed for them and anything they must do, in 1 to 4 short points, with no jargon (no file names, commands or internal terms). This text becomes the GitHub release body, which the AI reads from `meta.update.notes` and shows the user when it offers an update. Technical entries follow below the summary.
 
 ## Releasing (maintainers)
 
@@ -87,10 +87,10 @@ Include your OS, `agent-reach doctor --text`, `agent-reach check <channel> --tex
 
 ---
 
-## 中文简述
+## Quick summary
 
-- 渠道 = `agent_reach/channels/` 里的一个 `Channel` 子类，在 `channels/__init__.py` 注册。需要声明 `level`、`actions`（`Action`/`Param`、有序后端、`live_test`），按需声明 `tools`、`prereqs`、`login_url` / `session` / `login_argv`、`setup_problems()`。
-- 不读取个人浏览器 Cookie 数据库，不替用户登录。用户可明确授权通过指定 Browser Bridge 或本地文件做一次该站登录态导入，不保留长期导出授权；数据只放在 `~/.agent-reach/` 下。
-- 新渠道合并前必须在本地跑通 `agent-reach check <channel>` 实测，并把输出贴在 PR 里。
-- 提交前运行 `ruff check agent_reach tests` 和 `pytest`。Commit message 用英文。
-- 发布说明：`CHANGELOG.md` 每个版本开头先写给用户看的大白话摘要（中文和英文各一份，1 到 4 条，不用术语），这段会成为 GitHub release 正文，AI 提示更新时会讲给用户听。
+- A channel = a `Channel` subclass in `agent_reach/channels/`, registered in `channels/__init__.py`. Declare `level`, `actions` (`Action`/`Param`, ordered backends, `live_test`), and as needed `tools`, `prereqs`, `login_url` / `session` / `login_argv`, and `setup_problems()`.
+- Never read a personal browser's Cookie database or log in on the user's behalf. A user may explicitly authorize a one-time, site-scoped login-state import from a specified Browser Bridge or local file; no standing export grant is retained. All data lives only under `~/.agent-reach/`.
+- Before merging a new channel, run `agent-reach check <channel>` locally and paste the output into the PR.
+- Run `ruff check agent_reach tests` and `pytest` before submitting. Commit messages in English.
+- Release notes: every version section in `CHANGELOG.md` starts with a plain-language summary for users (one in English, 1 to 4 short points, no jargon). This text becomes the GitHub release body, which the AI shows to the user when it offers an update.
